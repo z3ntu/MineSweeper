@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">MineSweeper</string>
+    <string name="gameover">GAME OVER!</string>
+    <string name="action_settings">Settings</string>
+    <string name="new_game">New Game</string>
+    <string name="won_text">You have won!</string>
+</resources>
