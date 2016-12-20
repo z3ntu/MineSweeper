@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.github.z3ntu.minesweeper">
+    package="xyz.z3ntu.minesweeper">
 
     <application
         android:allowBackup="true"

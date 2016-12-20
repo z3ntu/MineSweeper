@@ -1,4 +1,4 @@
-package io.github.z3ntu.minesweeper;
+package xyz.z3ntu.minesweeper;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -39,16 +39,17 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     private SharedPreferences sharedPref;
 
+    private boolean shouldInitFields = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
-//        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
-//        setActionBar(myToolbar);
 
         setupVars();
         setupGame();
+//        setupDatabase();
     }
 
     private void setupVars() {
@@ -78,17 +79,27 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         rows = Integer.parseInt(sharedPref.getString("rows", "9"));
         cols = Integer.parseInt(sharedPref.getString("columns", "9"));
         numBombs = Integer.parseInt(sharedPref.getString("bombs", "10"));
-        fields = new String[cols * rows];
+        if (fields == null) {
+            fields = new String[cols * rows];
+        } else {
+            shouldInitFields = false;
+        }
     }
 
     private void setupGame() {
         game = new Game(cols, rows, numBombs);
-
-        for (int i = 0; i < fields.length; i++) {
-            fields[i] = unknown;
+        if (shouldInitFields) {
+            for (int i = 0; i < fields.length; i++) {
+                fields[i] = unknown;
+            }
         }
         arrayAdapter.notifyDataSetChanged();
     }
+
+    /*private void setupDatabase() {
+        // In any activity just pass the context and use the singleton method
+        MinesweeperDatabase helper = MinesweeperDatabase.getInstance(this);
+    }*/
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -102,7 +113,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
             if (gameState == Game.GameState.BOMB) {
                 textView.setText(R.string.gameover);
                 gameOver = true;
-            } else if(gameState == Game.GameState.ZERO) {
+            } else if (gameState == Game.GameState.ZERO) {
                 updateAllFields();
             }
 
@@ -166,7 +177,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 
     private void updateAllFields() {
         for (int i = 0; i < fields.length; i++) {
-            if(game.getShowState(iToX(i), iToY(i)) == Game.ShowState.VISIBLE)
+            if (game.getShowState(iToX(i), iToY(i)) == Game.ShowState.VISIBLE)
                 fields[i] = game.getGameState(iToX(i), iToY(i)).getStr();
         }
         arrayAdapter.notifyDataSetChanged();
@@ -182,8 +193,46 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
 //        return i % cols;
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        System.out.println("---ON SAVE INSTANCE STATE---");
+        MinesweeperDatabase db = MinesweeperDatabase.getInstance(this);
+        long timestamp = System.currentTimeMillis() / 1000;
+        for (int i = 0; i < cols * rows; i++) {
+            int x = iToX(i);
+            int y = iToY(i);
+            db.insertField(i, game.getShowState(x, y), game.getGameState(x, y), timestamp);
+        }
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        System.out.println("---ON RESTORE INSTANCE STATE---");
+        MinesweeperDatabase db = MinesweeperDatabase.getInstance(this);
+        Game.ShowState[][] showStates = new Game.ShowState[cols][rows]; // TODO: cols&rows correct?
+        Game.GameState[][] gameStates = new Game.GameState[cols][rows];
+        int lasttimestamp = db.getLastTimestamp();
+        for (int i = 0; i < cols * rows; i++) {
+            int x = iToX(i);
+            int y = iToY(i);
+            Object[] ret = db.getField(i, lasttimestamp);
+            gameStates[x][y] = (Game.GameState) ret[0];
+            showStates[x][y] = (Game.ShowState) ret[1];
+            if (showStates[x][y] == Game.ShowState.VISIBLE) {
+                fields[i] = gameStates[x][y].getStr();
+            } else {
+                fields[i] = unknown;
+            }
+
+        }
+        game.setGameState(gameStates);
+        game.setShowState(showStates);
+
+        arrayAdapter.notifyDataSetChanged();
+    }
+
     private void checkIfWon(Game.Result result) {
-        if(result == Game.Result.WIN) {
+        if (result == Game.Result.WIN) {
             textView.setText(R.string.won_text);
         }
     }

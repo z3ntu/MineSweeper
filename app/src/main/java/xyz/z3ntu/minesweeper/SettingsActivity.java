@@ -1,4 +1,4 @@
-package io.github.z3ntu.minesweeper;
+package xyz.z3ntu.minesweeper;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
@@ -11,7 +11,6 @@ import android.preference.PreferenceFragment;
  * Written by Luca Weiss (z3ntu)
  * https://github.com/z3ntu
  */
-
 public class SettingsActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
